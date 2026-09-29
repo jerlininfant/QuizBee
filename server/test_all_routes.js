@@ -227,13 +227,11 @@ async function runComprehensiveRouteTests() {
   console.log(`=================================================\n`);
 
   if (failed > 0) {
-    process.exit(1);
-  } else {
-    process.exit(0);
+    process.exitCode = 1;
   }
 }
 
 runComprehensiveRouteTests().catch((err) => {
   console.error('Test execution error:', err);
-  process.exit(1);
+  process.exitCode = 1;
 });

@@ -128,5 +128,17 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload)
     });
+  },
+
+  // System status and configuration
+  getSystemStatus() {
+    return this.request('/system/status');
+  },
+
+  updateSystemConfig(payload) {
+    return this.request('/system/configure', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 };

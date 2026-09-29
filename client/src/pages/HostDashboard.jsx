@@ -284,25 +284,69 @@ export default function HostDashboard() {
 
       {/* Settings Tab */}
       {activeTab === 'settings' && (
-        <div className="glass-card max-w-2xl p-6 rounded-2xl border border-slate-800">
-          <h3 className="text-lg font-bold text-white mb-4">Quizbee Host Configuration</h3>
-          <div className="space-y-4 text-sm text-slate-300">
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <p className="font-semibold text-white">Authoritative Server Scoring</p>
+        <div className="glass-card max-w-3xl p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div>
+              <h3 className="text-xl font-black text-white">System & Cloud Integrations</h3>
               <p className="text-xs text-slate-400 mt-1">
-                Active. Maximum 1000 points per question (500 base + 500 speed bonus). Answers validated on backend.
+                Manage backend AI and Database connections. Secrets are strictly stored in backend environment variables.
               </p>
             </div>
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <p className="font-semibold text-white">AI Provider</p>
-              <p className="text-xs text-slate-400 mt-1">
-                OpenAI GPT-4o-mini with auto-failover heuristic generator.
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              Host Security
+            </span>
+          </div>
+
+          {/* Cloud Status Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* OpenAI Card */}
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-extrabold text-white text-sm">OpenAI Integration</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  gpt-4o-mini Ready
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Generates 4-choice questions, identifies correct answers, and crafts clear explanations with fallback protection.
               </p>
             </div>
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <p className="font-semibold text-white">Host Account</p>
-              <p className="text-xs text-slate-400 mt-1">Logged in as {user?.email}</p>
+
+            {/* Supabase Card */}
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-extrabold text-white text-sm">Supabase PostgreSQL</span>
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  7 Tables Schema Ready
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                RLS-enabled schema for users, quizzes, questions, rooms, players, teams, and answers with cascade deletes.
+              </p>
             </div>
+          </div>
+
+          {/* Quick Setup Instructions */}
+          <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              Environment Variables Configuration (server/.env)
+            </h4>
+            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 font-mono text-xs text-amber-300/90 overflow-x-auto">
+              <p># OpenAI API Key</p>
+              <p>OPENAI_API_KEY=sk-proj-xxxxxxxx</p>
+              <p className="mt-2"># Supabase PostgreSQL Connection</p>
+              <p>SUPABASE_URL=https://your-project.supabase.co</p>
+              <p>SUPABASE_SERVICE_ROLE_KEY=eyJhxxxxxxx</p>
+            </div>
+            <p className="text-xs text-slate-500">
+              Database schema is located at <code className="text-amber-400">server/src/db/schema.sql</code>. Execute it in your Supabase SQL Editor to initialize all 7 tables.
+            </p>
+          </div>
+
+          {/* Authoritative Server Details */}
+          <div className="pt-2 text-xs text-slate-400 space-y-1">
+            <p>• Authoritative Scoring: Active (500 Base + up to 500 Speed Bonus).</p>
+            <p>• Host Account: {user?.email}</p>
           </div>
         </div>
       )}

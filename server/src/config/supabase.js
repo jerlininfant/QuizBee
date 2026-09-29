@@ -1,19 +1,37 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from './env.js';
 
-let supabase = null;
+let supabaseClient = null;
 
-if (config.supabaseUrl && config.supabaseKey) {
-  try {
-    supabase = createClient(config.supabaseUrl, config.supabaseKey, {
-      auth: { persistSession: false }
-    });
-    console.log('[Database] Connected to Supabase successfully.');
-  } catch (error) {
-    console.warn('[Database] Failed to connect to Supabase, fallback store will be used:', error.message);
+export function initSupabase(url, key) {
+  const targetUrl = url || process.env.SUPABASE_URL || config.supabaseUrl;
+  const targetKey = key || process.env.SUPABASE_SERVICE_ROLE_KEY || config.supabaseKey;
+
+  if (targetUrl && targetKey) {
+    try {
+      supabaseClient = createClient(targetUrl, targetKey, {
+        auth: { persistSession: false }
+      });
+      console.log('[Database] Connected to Supabase PostgreSQL successfully.');
+      return supabaseClient;
+    } catch (error) {
+      console.warn('[Database] Failed to connect to Supabase:', error.message);
+      supabaseClient = null;
+      return null;
+    }
   }
-} else {
-  console.log('[Database] No Supabase credentials provided. Using authoritative local persistence store.');
+
+  supabaseClient = null;
+  return null;
 }
 
-export { supabase };
+// Initial initialization attempt
+initSupabase();
+
+export const supabase = supabaseClient;
+export function getSupabase() {
+  if (!supabaseClient) {
+    initSupabase();
+  }
+  return supabaseClient;
+}

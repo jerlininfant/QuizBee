@@ -1,18 +1,26 @@
-import { supabase } from '../config/supabase.js';
+import { getSupabase } from '../config/supabase.js';
 
 export class SupabaseRepository {
+  /**
+   * Get active Supabase client instance
+   */
+  static getClient() {
+    return getSupabase();
+  }
+
   /**
    * Check if Supabase client is initialized with credentials
    */
   static isConfigured() {
-    return !!supabase;
+    return !!this.getClient();
   }
 
   /**
    * Test database connectivity and table accessibility
    */
   static async testConnection() {
-    if (!this.isConfigured()) {
+    const client = this.getClient();
+    if (!client) {
       return {
         connected: false,
         message: 'Supabase URL or Service Role Key not set in server/.env'
@@ -21,7 +29,7 @@ export class SupabaseRepository {
 
     try {
       // Query users table with limit 1
-      const { data, error } = await supabase.from('users').select('id').limit(1);
+      const { data, error } = await client.from('users').select('id').limit(1);
       if (error) {
         return {
           connected: false,
@@ -43,8 +51,9 @@ export class SupabaseRepository {
 
   // --- USERS ---
   static async findUserByEmail(email) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('users')
       .select('*')
       .ilike('email', email.trim())
@@ -57,8 +66,9 @@ export class SupabaseRepository {
   }
 
   static async findUserById(id) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('users')
       .select('*')
       .eq('id', id)
@@ -68,8 +78,9 @@ export class SupabaseRepository {
   }
 
   static async createUser(userData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('users')
       .insert([{
         name: userData.name,
@@ -89,8 +100,9 @@ export class SupabaseRepository {
 
   // --- QUIZZES ---
   static async getQuizzesByHost(hostId) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('quizzes')
       .select('*')
       .eq('host_id', hostId)
@@ -100,8 +112,9 @@ export class SupabaseRepository {
   }
 
   static async getQuizById(id) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('quizzes')
       .select('*, questions(*)')
       .eq('id', id)
@@ -111,8 +124,9 @@ export class SupabaseRepository {
   }
 
   static async createQuiz(quizData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('quizzes')
       .insert([{
         host_id: quizData.host_id,
@@ -131,8 +145,9 @@ export class SupabaseRepository {
   }
 
   static async updateQuiz(id, updateData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('quizzes')
       .update(updateData)
       .eq('id', id)
@@ -143,16 +158,18 @@ export class SupabaseRepository {
   }
 
   static async deleteQuiz(id) {
-    if (!this.isConfigured()) return null;
-    const { error } = await supabase.from('quizzes').delete().eq('id', id);
+    const client = this.getClient();
+    if (!client) return null;
+    const { error } = await client.from('quizzes').delete().eq('id', id);
     if (error) throw error;
     return true;
   }
 
   // --- QUESTIONS ---
   static async getQuestionsByQuizId(quizId) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('questions')
       .select('*')
       .eq('quiz_id', quizId)
@@ -162,9 +179,10 @@ export class SupabaseRepository {
   }
 
   static async saveQuestions(quizId, questionList) {
-    if (!this.isConfigured()) return null;
+    const client = this.getClient();
+    if (!client) return null;
     // Delete old
-    await supabase.from('questions').delete().eq('quiz_id', quizId);
+    await client.from('questions').delete().eq('quiz_id', quizId);
 
     const rows = questionList.map((q, idx) => ({
       quiz_id: quizId,
@@ -178,15 +196,16 @@ export class SupabaseRepository {
       order_index: idx
     }));
 
-    const { data, error } = await supabase.from('questions').insert(rows).select();
+    const { data, error } = await client.from('questions').insert(rows).select();
     if (error) throw error;
     return data;
   }
 
   // --- ROOMS ---
   static async createRoom(roomData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('rooms')
       .insert([{
         quiz_id: roomData.quiz_id,
@@ -201,8 +220,9 @@ export class SupabaseRepository {
   }
 
   static async getRoomByCode(code) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('rooms')
       .select('*')
       .eq('room_code', code.toUpperCase())
@@ -212,8 +232,9 @@ export class SupabaseRepository {
   }
 
   static async updateRoom(code, updateData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('rooms')
       .update(updateData)
       .eq('room_code', code.toUpperCase())
@@ -225,8 +246,9 @@ export class SupabaseRepository {
 
   // --- PLAYERS ---
   static async addPlayer(playerData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('players')
       .insert([{
         room_id: playerData.room_id,
@@ -244,8 +266,9 @@ export class SupabaseRepository {
   }
 
   static async getPlayersByRoomId(roomId) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('players')
       .select('*')
       .eq('room_id', roomId);
@@ -254,8 +277,9 @@ export class SupabaseRepository {
   }
 
   static async updatePlayer(id, updateData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('players')
       .update(updateData)
       .eq('id', id)
@@ -267,8 +291,9 @@ export class SupabaseRepository {
 
   // --- TEAMS ---
   static async createTeam(teamData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('teams')
       .insert([{
         room_id: teamData.room_id,
@@ -282,8 +307,9 @@ export class SupabaseRepository {
   }
 
   static async getTeamsByRoomId(roomId) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('teams')
       .select('*')
       .eq('room_id', roomId);
@@ -293,8 +319,9 @@ export class SupabaseRepository {
 
   // --- ANSWERS ---
   static async recordAnswer(answerData) {
-    if (!this.isConfigured()) return null;
-    const { data, error } = await supabase
+    const client = this.getClient();
+    if (!client) return null;
+    const { data, error } = await client
       .from('answers')
       .insert([{
         room_id: answerData.room_id,

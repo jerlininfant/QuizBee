@@ -7,6 +7,7 @@ import authRoutes from './routes/authRoutes.js';
 import quizRoutes from './routes/quizRoutes.js';
 import roomRoutes from './routes/roomRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import systemRoutes from './routes/systemRoutes.js';
 import { setupSocketHandler } from './socket/socketHandler.js';
 
 const app = express();
@@ -44,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/system', systemRoutes);
 
 // Socket.IO Handler
 setupSocketHandler(io);
