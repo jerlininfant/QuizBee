@@ -1,4 +1,7 @@
-const API_BASE = '/api';
+const RAW_API_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE = RAW_API_URL
+  ? (RAW_API_URL.endsWith('/api') ? RAW_API_URL : `${RAW_API_URL.replace(/\/+$/, '')}/api`)
+  : '/api';
 
 export const api = {
   getToken() {
@@ -25,14 +28,20 @@ export const api = {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers
-    });
+    let response;
+    try {
+      response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers
+      });
+    } catch (fetchErr) {
+      console.error('[API Connection Error]', fetchErr);
+      throw new Error('Network error: Unable to connect to server. Please check your backend deployment and network connection.');
+    }
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(data.error || 'Network error occurred');
+      throw new Error(data.error || data.message || `Request failed (${response.status})`);
     }
     return data;
   },

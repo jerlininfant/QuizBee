@@ -2,9 +2,12 @@ import { io } from 'socket.io-client';
 
 let socket = null;
 
+const RAW_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || '';
+const SOCKET_URL = RAW_URL ? RAW_URL.replace(/\/api\/?$/, '').replace(/\/+$/, '') : '/';
+
 export const getSocket = () => {
   if (!socket) {
-    socket = io('/', {
+    socket = io(SOCKET_URL, {
       autoConnect: true,
       reconnection: true,
       reconnectionAttempts: 10,

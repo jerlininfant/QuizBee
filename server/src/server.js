@@ -16,7 +16,7 @@ const server = http.createServer(app);
 // Realtime Socket.IO configuration
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: (origin, callback) => callback(null, true),
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
   }
@@ -24,7 +24,7 @@ const io = new Server(server, {
 
 // Middlewares
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => callback(null, true),
   credentials: true
 }));
 app.use(express.json({ limit: '20mb' }));
