@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = 'https://quizbee-007.onrender.com/api';
 
 export const api = {
   getToken() {
