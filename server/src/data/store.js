@@ -1,6 +1,16 @@
 import bcrypt from 'bcryptjs';
-import { supabase } from '../config/supabase.js';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { SupabaseRepository } from '../db/supabaseRepository.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const STORE_FILE = path.resolve(__dirname, '.quizbee_local_store.json');
+
+const DEFAULT_HOST_ID = '00000000-0000-4000-8000-000000000001';
+const DEFAULT_QUIZ_ID = '00000000-0000-4000-8000-000000000002';
 
 class DataStore {
   constructor() {
@@ -13,26 +23,27 @@ class DataStore {
     this.answers = new Map(); // answer_id -> answer
 
     this.initSeedData();
+    this.loadFromDisk();
   }
 
   initSeedData() {
-    // Demo host user
-    const hostId = 'user_host_default';
+    // Demo host user with standard UUID
     const passwordHash = bcrypt.hashSync('password123', 10);
-    this.users.set(hostId, {
-      id: hostId,
+    const hostUser = {
+      id: DEFAULT_HOST_ID,
       name: 'Dr. Quizbee Host',
       email: 'host@quizbee.com',
       password: passwordHash,
       role: 'host',
       createdAt: new Date().toISOString()
-    });
+    };
+    this.users.set(DEFAULT_HOST_ID, hostUser);
+    this.users.set('user_host_default', hostUser);
 
-    // Sample Demo Quiz
-    const quizId = 'quiz_demo_101';
-    this.quizzes.set(quizId, {
-      id: quizId,
-      host_id: hostId,
+    // Sample Demo Quiz with standard UUID
+    const demoQuiz = {
+      id: DEFAULT_QUIZ_ID,
+      host_id: DEFAULT_HOST_ID,
       title: 'Web & Computer Science Essentials',
       subject: 'Technology',
       difficulty: 'Medium',
@@ -40,12 +51,14 @@ class DataStore {
       time_per_question: 20,
       mode: 'solo',
       created_at: new Date().toISOString()
-    });
+    };
+    this.quizzes.set(DEFAULT_QUIZ_ID, demoQuiz);
+    this.quizzes.set('quiz_demo_101', demoQuiz);
 
     const sampleQuestions = [
       {
-        id: 'q_demo_1',
-        quiz_id: quizId,
+        id: '00000000-0000-4000-8000-000000000011',
+        quiz_id: DEFAULT_QUIZ_ID,
         question_text: 'What protocol does Socket.IO primarily establish over HTTP for persistent bidirectional communication?',
         option_a: 'WebSocket',
         option_b: 'FTP',
@@ -56,8 +69,8 @@ class DataStore {
         order_index: 0
       },
       {
-        id: 'q_demo_2',
-        quiz_id: quizId,
+        id: '00000000-0000-4000-8000-000000000012',
+        quiz_id: DEFAULT_QUIZ_ID,
         question_text: 'In React, which hook is most appropriate for establishing a WebSocket connection on component mount?',
         option_a: 'useState',
         option_b: 'useEffect',
@@ -68,8 +81,8 @@ class DataStore {
         order_index: 1
       },
       {
-        id: 'q_demo_3',
-        quiz_id: quizId,
+        id: '00000000-0000-4000-8000-000000000013',
+        quiz_id: DEFAULT_QUIZ_ID,
         question_text: 'What is the primary role of an authoritative backend in a competitive multiplayer quiz?',
         option_a: 'Render React components on the server',
         option_b: 'Prevent client cheating by validating answers and calculating scores server-side',
@@ -80,8 +93,8 @@ class DataStore {
         order_index: 2
       },
       {
-        id: 'q_demo_4',
-        quiz_id: quizId,
+        id: '00000000-0000-4000-8000-000000000014',
+        quiz_id: DEFAULT_QUIZ_ID,
         question_text: 'What data structure offers O(1) average time complexity for key lookups in Node.js?',
         option_a: 'Linked List',
         option_b: 'Binary Search Tree',
@@ -92,8 +105,8 @@ class DataStore {
         order_index: 3
       },
       {
-        id: 'q_demo_5',
-        quiz_id: quizId,
+        id: '00000000-0000-4000-8000-000000000015',
+        quiz_id: DEFAULT_QUIZ_ID,
         question_text: 'Which HTTP status code signifies that a resource was successfully created?',
         option_a: '200 OK',
         option_b: '201 Created',
@@ -105,32 +118,83 @@ class DataStore {
       }
     ];
 
-    sampleQuestions.forEach(q => this.questions.set(q.id, q));
+    sampleQuestions.forEach(q => {
+      this.questions.set(q.id, q);
+    });
+  }
+
+  loadFromDisk() {
+    try {
+      if (fs.existsSync(STORE_FILE)) {
+        const raw = fs.readFileSync(STORE_FILE, 'utf-8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.users)) {
+          data.users.forEach(u => {
+            if (u && u.id) this.users.set(u.id, u);
+          });
+        }
+        if (Array.isArray(data.quizzes)) {
+          data.quizzes.forEach(q => {
+            if (q && q.id) this.quizzes.set(q.id, q);
+          });
+        }
+        if (Array.isArray(data.questions)) {
+          data.questions.forEach(q => {
+            if (q && q.id) this.questions.set(q.id, q);
+          });
+        }
+        console.log(`[DataStore] Loaded ${this.users.size} users and ${this.quizzes.size} quizzes from disk cache.`);
+      }
+    } catch (err) {
+      console.warn('[DataStore] Disk cache read notice:', err.message);
+    }
+  }
+
+  saveToDisk() {
+    try {
+      const data = {
+        users: Array.from(this.users.values()).filter(u => u.id !== 'user_host_default'),
+        quizzes: Array.from(this.quizzes.values()).filter(q => q.id !== 'quiz_demo_101'),
+        questions: Array.from(this.questions.values())
+      };
+      fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (err) {
+      console.warn('[DataStore] Disk cache write notice:', err.message);
+    }
   }
 
   // USER METHODS
   findUserByEmail(email) {
+    if (!email) return null;
+    const clean = email.trim().toLowerCase();
     for (const user of this.users.values()) {
-      if (user.email.toLowerCase() === email.toLowerCase()) return user;
+      if (user.email && user.email.toLowerCase() === clean) return user;
     }
     return null;
   }
 
   findUserById(id) {
+    if (!id) return null;
+    if (id === 'user_host_default') {
+      return this.users.get(DEFAULT_HOST_ID) || this.users.get(id) || null;
+    }
     return this.users.get(id) || null;
   }
 
   createUser(userData) {
-    const id = userData.id || `user_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const id = userData.id || crypto.randomUUID();
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
     const user = {
       ...userData,
       id,
+      email: cleanEmail,
       createdAt: userData.createdAt || new Date().toISOString()
     };
     this.users.set(id, user);
+    this.saveToDisk();
 
     if (SupabaseRepository.isConfigured()) {
-      SupabaseRepository.createUser(userData).catch(err => {
+      SupabaseRepository.createUser(user).catch(err => {
         console.warn('[Supabase Sync] Failed to sync user:', err.message);
       });
     }
@@ -140,24 +204,34 @@ class DataStore {
 
   // QUIZ METHODS
   getQuizzesByHost(hostId) {
-    return Array.from(this.quizzes.values()).filter(q => q.host_id === hostId);
+    const effectiveHostId = hostId === 'user_host_default' ? DEFAULT_HOST_ID : hostId;
+    return Array.from(this.quizzes.values())
+      .filter(q => q.id !== 'quiz_demo_101') // exclude alias
+      .filter(q => q.host_id === hostId || q.host_id === effectiveHostId);
   }
 
   getQuizById(id) {
+    if (!id) return null;
+    if (id === 'quiz_demo_101') {
+      return this.quizzes.get(DEFAULT_QUIZ_ID) || this.quizzes.get(id) || null;
+    }
     return this.quizzes.get(id) || null;
   }
 
   createQuiz(quizData) {
-    const id = quizData.id || `quiz_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const id = quizData.id || crypto.randomUUID();
+    const effectiveHostId = quizData.host_id === 'user_host_default' ? DEFAULT_HOST_ID : quizData.host_id;
     const quiz = {
       ...quizData,
       id,
+      host_id: effectiveHostId,
       created_at: quizData.created_at || new Date().toISOString()
     };
     this.quizzes.set(id, quiz);
+    this.saveToDisk();
 
     if (SupabaseRepository.isConfigured()) {
-      SupabaseRepository.createQuiz(quizData).catch(err => {
+      SupabaseRepository.createQuiz(quiz).catch(err => {
         console.warn('[Supabase Sync] Failed to sync quiz:', err.message);
       });
     }
@@ -166,26 +240,54 @@ class DataStore {
   }
 
   updateQuiz(id, updateData) {
-    const quiz = this.quizzes.get(id);
+    const quiz = this.getQuizById(id);
     if (!quiz) return null;
     const updated = { ...quiz, ...updateData };
-    this.quizzes.set(id, updated);
+    this.quizzes.set(quiz.id, updated);
+    this.saveToDisk();
+
+    if (SupabaseRepository.isConfigured()) {
+      SupabaseRepository.updateQuiz(quiz.id, updateData).catch(err => {
+        console.warn('[Supabase Sync] Failed to sync quiz update:', err.message);
+      });
+    }
+
     return updated;
   }
 
   deleteQuiz(id) {
-    // Delete questions associated
+    const quiz = this.getQuizById(id);
+    if (!quiz) return false;
+    const targetId = quiz.id;
+
     for (const [qid, q] of this.questions.entries()) {
-      if (q.quiz_id === id) this.questions.delete(qid);
+      if (q.quiz_id === targetId || q.quiz_id === id) this.questions.delete(qid);
     }
-    return this.quizzes.delete(id);
+    this.quizzes.delete(targetId);
+    this.quizzes.delete(id);
+    this.saveToDisk();
+
+    if (SupabaseRepository.isConfigured()) {
+      SupabaseRepository.deleteQuiz(targetId).catch(err => {
+        console.warn('[Supabase Sync] Failed to delete quiz on Supabase:', err.message);
+      });
+    }
+    return true;
   }
 
   // QUESTION METHODS
   getQuestionsByQuizId(quizId) {
-    return Array.from(this.questions.values())
-      .filter(q => q.quiz_id === quizId)
-      .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    const targetId = quizId === 'quiz_demo_101' ? DEFAULT_QUIZ_ID : quizId;
+    const matched = [];
+    const seenIds = new Set();
+
+    for (const q of this.questions.values()) {
+      if ((q.quiz_id === targetId || q.quiz_id === quizId) && !seenIds.has(q.id)) {
+        seenIds.add(q.id);
+        matched.push(q);
+      }
+    }
+    return matched.sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0));
   }
 
   getQuestionById(id) {
@@ -193,24 +295,31 @@ class DataStore {
   }
 
   saveQuestions(quizId, questionList) {
+    const targetQuizId = quizId === 'quiz_demo_101' ? DEFAULT_QUIZ_ID : quizId;
+
     // remove existing questions for this quiz
     for (const [qid, q] of this.questions.entries()) {
-      if (q.quiz_id === quizId) this.questions.delete(qid);
+      if (q.quiz_id === targetQuizId || q.quiz_id === quizId) this.questions.delete(qid);
     }
+
     const saved = [];
     questionList.forEach((q, index) => {
-      const qId = q.id || `q_${quizId}_${index + 1}_${Date.now()}`;
+      const isUuid = q.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(q.id);
+      const qId = isUuid ? q.id : crypto.randomUUID();
       const item = {
         ...q,
         id: qId,
-        quiz_id: quizId,
+        quiz_id: targetQuizId,
         order_index: index
       };
       this.questions.set(qId, item);
       saved.push(item);
     });
+
+    this.saveToDisk();
+
     if (SupabaseRepository.isConfigured()) {
-      SupabaseRepository.saveQuestions(quizId, questionList).catch(err => {
+      SupabaseRepository.saveQuestions(targetQuizId, saved).catch(err => {
         console.warn('[Supabase Sync] Failed to sync questions:', err.message);
       });
     }
@@ -223,11 +332,14 @@ class DataStore {
     if (!q) return null;
     const updated = { ...q, ...updateData };
     this.questions.set(id, updated);
+    this.saveToDisk();
     return updated;
   }
 
   deleteQuestion(id) {
-    return this.questions.delete(id);
+    const res = this.questions.delete(id);
+    this.saveToDisk();
+    return res;
   }
 
   // ROOM METHODS
@@ -245,8 +357,13 @@ class DataStore {
 
   createRoom(roomData) {
     const code = roomData.room_code.toUpperCase();
+    const id = roomData.id || crypto.randomUUID();
+    const effectiveQuizId = roomData.quiz_id === 'quiz_demo_101' ? DEFAULT_QUIZ_ID : roomData.quiz_id;
+
     const room = {
       ...roomData,
+      id,
+      quiz_id: effectiveQuizId,
       room_code: code,
       status: roomData.status || 'waiting', // waiting, live, paused, finished
       current_question_index: 0,
@@ -257,7 +374,7 @@ class DataStore {
     this.rooms.set(code, room);
 
     if (SupabaseRepository.isConfigured()) {
-      SupabaseRepository.createRoom(roomData).catch(err => {
+      SupabaseRepository.createRoom(room).catch(err => {
         console.warn('[Supabase Sync] Failed to sync room:', err.message);
       });
     }
@@ -292,7 +409,7 @@ class DataStore {
   }
 
   addPlayer(playerData) {
-    const id = playerData.id || `p_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const id = playerData.id || crypto.randomUUID();
     const player = {
       ...playerData,
       id,
@@ -336,7 +453,7 @@ class DataStore {
   }
 
   createTeam(teamData) {
-    const id = teamData.id || `team_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const id = teamData.id || crypto.randomUUID();
     const team = {
       ...teamData,
       id,
@@ -359,7 +476,7 @@ class DataStore {
 
   // ANSWER METHODS
   recordAnswer(answerData) {
-    const id = `ans_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const id = answerData.id || crypto.randomUUID();
     const record = {
       ...answerData,
       id,
@@ -368,7 +485,7 @@ class DataStore {
     this.answers.set(id, record);
 
     if (SupabaseRepository.isConfigured()) {
-      SupabaseRepository.recordAnswer(answerData).catch(err => {
+      SupabaseRepository.recordAnswer(record).catch(err => {
         console.warn('[Supabase Sync] Failed to sync answer:', err.message);
       });
     }

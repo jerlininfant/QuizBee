@@ -39,7 +39,14 @@ export const api = {
       throw new Error('Network error: Unable to connect to server. Please check your backend deployment and network connection.');
     }
 
-    const data = await response.json().catch(() => ({}));
+    let data = {};
+    const text = await response.text();
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { error: text || `Request failed (${response.status})` };
+    }
+
     if (!response.ok) {
       throw new Error(data.error || data.message || `Request failed (${response.status})`);
     }

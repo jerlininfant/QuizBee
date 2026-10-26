@@ -1,8 +1,10 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { store } from '../data/store.js';
 import { config } from '../config/env.js';
 import { supabase } from '../config/supabase.js';
+import { SupabaseRepository } from '../db/supabaseRepository.js';
 
 export const register = async (req, res) => {
   try {
@@ -20,12 +22,21 @@ export const register = async (req, res) => {
     const cleanName = name.trim();
 
     // Check store first
-    const existingUser = store.findUserByEmail(cleanEmail);
+    let existingUser = store.findUserByEmail(cleanEmail);
+    if (!existingUser && SupabaseRepository.isConfigured()) {
+      try {
+        const supaUser = await SupabaseRepository.findUserByEmail(cleanEmail);
+        if (supaUser) existingUser = supaUser;
+      } catch (err) {
+        console.warn('[Register] Supabase check notice:', err.message);
+      }
+    }
+
     if (existingUser) {
       return res.status(400).json({ success: false, error: 'An account with this email already exists.' });
     }
 
-    let supabaseUserId = null;
+    let userId = crypto.randomUUID();
 
     // Supabase Auth Integration
     if (supabase) {
@@ -42,13 +53,12 @@ export const register = async (req, res) => {
         });
 
         if (supaError) {
-          console.warn('[Supabase Auth] SignUp warning:', supaError.message);
-          // If user already exists in Supabase
+          console.warn('[Supabase Auth] SignUp notice:', supaError.message);
           if (supaError.message?.toLowerCase().includes('already registered')) {
             return res.status(400).json({ success: false, error: 'An account with this email already exists.' });
           }
-        } else if (supaData && supaData.user) {
-          supabaseUserId = supaData.user.id;
+        } else if (supaData?.user?.id) {
+          userId = supaData.user.id;
         }
       } catch (authErr) {
         console.warn('[Supabase Auth] Failed during signUp:', authErr.message);
@@ -59,16 +69,18 @@ export const register = async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
 
     const user = store.createUser({
-      id: supabaseUserId || undefined,
+      id: userId,
       name: cleanName,
       email: cleanEmail,
       password: passwordHash,
       role
     });
 
-    const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, config.jwtSecret, {
-      expiresIn: '7d'
-    });
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, name: user.name, role: user.role },
+      config.jwtSecret,
+      { expiresIn: '7d' }
+    );
 
     return res.status(201).json({
       success: true,
@@ -96,6 +108,7 @@ export const login = async (req, res) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    let authenticatedUser = null;
 
     // 1. If Supabase is configured, attempt Supabase Auth first
     if (supabase) {
@@ -108,7 +121,6 @@ export const login = async (req, res) => {
         if (!supaErr && supaAuth?.user) {
           let user = store.findUserByEmail(cleanEmail);
           if (!user) {
-            // Re-sync user into store
             user = store.createUser({
               id: supaAuth.user.id,
               name: supaAuth.user.user_metadata?.name || cleanEmail.split('@')[0],
@@ -117,43 +129,55 @@ export const login = async (req, res) => {
               role: supaAuth.user.user_metadata?.role || 'host'
             });
           }
-
-          const token = jwt.sign(
-            { userId: user.id, email: user.email, role: user.role },
-            config.jwtSecret,
-            { expiresIn: '7d' }
-          );
-
-          return res.json({
-            success: true,
-            message: 'Logged in successfully via Supabase Auth',
-            token: supaAuth.session?.access_token || token,
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role
-            }
-          });
+          authenticatedUser = user;
         }
       } catch (authErr) {
-        console.warn('[Supabase Auth] Fallback to authoritative password verification:', authErr.message);
+        console.warn('[Supabase Auth] Falling back to database password verification:', authErr.message);
       }
     }
 
     // 2. Authoritative local credential validation
-    const user = store.findUserByEmail(cleanEmail);
-    if (!user) {
+    if (!authenticatedUser) {
+      let user = store.findUserByEmail(cleanEmail);
+
+      // If not in memory cache, query Supabase PostgreSQL table
+      if (!user && SupabaseRepository.isConfigured()) {
+        try {
+          const supaUser = await SupabaseRepository.findUserByEmail(cleanEmail);
+          if (supaUser) {
+            user = store.createUser({
+              id: supaUser.id,
+              name: supaUser.name,
+              email: supaUser.email,
+              password: supaUser.password_hash,
+              role: supaUser.role || 'host'
+            });
+          }
+        } catch (dbErr) {
+          console.warn('[Supabase DB] findUserByEmail notice:', dbErr.message);
+        }
+      }
+
+      if (user && user.password) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (isMatch) {
+          authenticatedUser = user;
+        }
+      }
+    }
+
+    if (!authenticatedUser) {
       return res.status(401).json({ success: false, error: 'Invalid email or password.' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, error: 'Invalid email or password.' });
-    }
-
+    // Always issue our authoritative backend JWT token so all subsequent requests succeed
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      {
+        userId: authenticatedUser.id,
+        email: authenticatedUser.email,
+        name: authenticatedUser.name,
+        role: authenticatedUser.role
+      },
       config.jwtSecret,
       { expiresIn: '7d' }
     );
@@ -163,10 +187,10 @@ export const login = async (req, res) => {
       message: 'Logged in successfully',
       token,
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role
+        id: authenticatedUser.id,
+        name: authenticatedUser.name,
+        email: authenticatedUser.email,
+        role: authenticatedUser.role
       }
     });
   } catch (err) {
@@ -178,6 +202,9 @@ export const login = async (req, res) => {
 export const getMe = async (req, res) => {
   try {
     const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'User not authenticated.' });
+    }
     return res.json({
       success: true,
       user: {

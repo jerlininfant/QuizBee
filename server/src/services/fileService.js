@@ -9,62 +9,104 @@ export class FileService {
    */
   static async extractText(file) {
     if (!file || !file.buffer) {
-      throw new Error('No file content provided');
+      return '';
     }
 
-    const filename = file.originalname.toLowerCase();
-    const mimeType = file.mimetype;
+    const filename = (file.originalname || '').toLowerCase();
+    const mimeType = file.mimetype || '';
 
-    // TXT file
+    // 1. TXT file
     if (filename.endsWith('.txt') || mimeType === 'text/plain') {
-      return file.buffer.toString('utf-8');
-    }
-
-    // PDF file
-    if (filename.endsWith('.pdf') || mimeType === 'application/pdf') {
       try {
-        const data = await pdfParse(file.buffer);
-        return data.text || '';
-      } catch (err) {
-        console.error('PDF parsing error:', err);
-        throw new Error('Failed to parse PDF document. Ensure it contains selectable text.');
+        return file.buffer.toString('utf-8');
+      } catch (e) {
+        return file.buffer.toString('ascii');
       }
     }
 
-    // DOCX file
+    // 2. PDF file
+    if (filename.endsWith('.pdf') || mimeType === 'application/pdf') {
+      try {
+        const data = await pdfParse(file.buffer);
+        if (data && data.text && data.text.trim().length > 10) {
+          return data.text.trim();
+        }
+      } catch (err) {
+        console.warn('[FileService] PDF parsing note:', err.message);
+      }
+
+      // Fallback extraction for text from PDF raw stream
+      try {
+        const str = file.buffer.toString('latin1');
+        const matches = str.match(/\(([^()]{3,})\)Tj/g) || str.match(/[A-Za-z0-9 ,.?!:;'-]{4,}/g);
+        if (matches && matches.length > 0) {
+          return matches
+            .map(m => m.replace(/^[()]|[()]Tj$/g, '').trim())
+            .filter(s => s.length > 3)
+            .join(' ');
+        }
+      } catch (fallbackErr) {
+        console.warn('[FileService] PDF text stream extraction notice:', fallbackErr.message);
+      }
+      return '';
+    }
+
+    // 3. DOCX file
     if (
       filename.endsWith('.docx') ||
       mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ) {
       try {
         const result = await mammoth.extractRawText({ buffer: file.buffer });
-        return result.value || '';
+        if (result && result.value) {
+          return result.value.trim();
+        }
       } catch (err) {
-        console.error('DOCX parsing error:', err);
-        throw new Error('Failed to extract text from DOCX file.');
+        console.warn('[FileService] DOCX parsing note:', err.message);
       }
+
+      // Fallback: extract XML text from docx zip stream
+      try {
+        const str = file.buffer.toString('utf-8');
+        const matches = str.match(/<w:t[^>]*>(.*?)<\/w:t>/gi);
+        if (matches && matches.length > 0) {
+          return matches.map(m => m.replace(/<[^>]+>/g, '').trim()).filter(Boolean).join(' ');
+        }
+      } catch (e) {}
+      return '';
     }
 
-    // PPTX / Other file
-    if (filename.endsWith('.pptx')) {
-      // In PPTX XML, text is contained inside <a:t>...</a:t> tags
+    // 4. PPTX file
+    if (
+      filename.endsWith('.pptx') ||
+      mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ) {
       try {
-        const textContent = file.buffer.toString('utf-8', 0, Math.min(file.buffer.length, 5000000));
+        const textContent = file.buffer.toString('utf-8');
         const matches = textContent.match(/<a:t[^>]*>(.*?)<\/a:t>/gi);
         if (matches && matches.length > 0) {
-          const extracted = matches
-            .map(m => m.replace(/<[^>]+>/g, '').trim())
-            .filter(t => t.length > 0)
-            .join(' ');
-          return extracted;
+          return matches.map(m => m.replace(/<[^>]+>/g, '').trim()).filter(Boolean).join(' ');
         }
-        return 'Presentation slides uploaded. Contains presentation topics.';
       } catch (err) {
-        return 'Presentation content extracted.';
+        console.warn('[FileService] PPTX XML extraction note:', err.message);
       }
+
+      // Stream fallback: extract readable ASCII sequences
+      try {
+        const latin = file.buffer.toString('latin1');
+        const readable = latin.match(/[A-Za-z0-9 ,.?!'-]{5,}/g);
+        if (readable && readable.length > 0) {
+          return readable.slice(0, 500).join(' ');
+        }
+      } catch (e) {}
+      return '';
     }
 
     // Default fallback try UTF-8 string
-    return file.buffer.toString('utf-8');
+    try {
+      return file.buffer.toString('utf-8');
+    } catch {
+      return '';
+    }
   }
 }

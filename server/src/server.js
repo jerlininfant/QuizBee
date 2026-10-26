@@ -2,6 +2,9 @@ import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { config } from './config/env.js';
 import authRoutes from './routes/authRoutes.js';
 import quizRoutes from './routes/quizRoutes.js';
@@ -50,10 +53,26 @@ app.use('/api/system', systemRoutes);
 // Socket.IO Handler
 setupSocketHandler(io);
 
+// Static client build serving (prevents 404 on direct localhost:5000 visits)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientDistPath = path.resolve(__dirname, '../../client/dist');
+
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('[Server Error]', err);
-  res.status(err.status || 500).json({
+  const status = err.status || (err.name === 'MulterError' ? 400 : 500);
+  res.status(status).json({
     success: false,
     error: err.message || 'Internal Server Error'
   });

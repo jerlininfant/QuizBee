@@ -158,6 +158,10 @@ export default function HostCreateQuiz() {
         questions: aiResult.questions || []
       });
 
+      if (!createRes || !createRes.quiz) {
+        throw new Error(createRes?.error || 'Failed to initialize quiz. Please try again.');
+      }
+
       // Pause briefly so host sees success step
       setTimeout(() => {
         navigate(`/host/quiz/${createRes.quiz.id}`);

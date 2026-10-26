@@ -1,0 +1,244 @@
+{
+  "users": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Dr. Quizbee Host",
+      "email": "host@quizbee.com",
+      "password": "$2a$10$cqKjQdn8oFwXbOW1.9qRwOqqyEwE04JCD3TD1Yp3sQSVw/jn559ey",
+      "role": "host",
+      "createdAt": "2026-10-26T04:26:10.148Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Dr. Quizbee Host",
+      "email": "host@quizbee.com",
+      "password": "$2a$10$jxFmIcK9rmyZp3vefNZ9MeGpw1l6HINxvQwoWwRmXFdl1lSLl.yfu",
+      "role": "host",
+      "createdAt": "2026-10-26T09:22:12.917Z"
+    },
+    {
+      "id": "b4cc058c-58f7-4b83-8153-50f347ce2138",
+      "name": "Prof. Ada Lovelace",
+      "email": "prof_1792988781482@example.com",
+      "password": "$2a$10$pdGXhEXOHb5RovdDUzi00Ou/wM4mrOqTIy0KBi9fcKUsamU0cnfSO",
+      "role": "host",
+      "createdAt": "2026-10-26T04:26:21.605Z"
+    }
+  ],
+  "quizzes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "host_id": "00000000-0000-4000-8000-000000000001",
+      "title": "Web & Computer Science Essentials",
+      "subject": "Technology",
+      "difficulty": "Medium",
+      "question_count": 5,
+      "time_per_question": 20,
+      "mode": "solo",
+      "created_at": "2026-10-26T04:26:10.168Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "host_id": "00000000-0000-4000-8000-000000000001",
+      "title": "Web & Computer Science Essentials",
+      "subject": "Technology",
+      "difficulty": "Medium",
+      "question_count": 5,
+      "time_per_question": 20,
+      "mode": "solo",
+      "created_at": "2026-10-26T09:22:12.919Z"
+    },
+    {
+      "host_id": "b4cc058c-58f7-4b83-8153-50f347ce2138",
+      "title": "Biology & Chemistry Mastery",
+      "subject": "Science",
+      "difficulty": "Medium",
+      "question_count": 4,
+      "time_per_question": 20,
+      "mode": "solo",
+      "id": "6ceebc07-1a58-4849-ade5-5da5c4a4a751",
+      "created_at": "2026-10-26T04:26:21.754Z"
+    },
+    {
+      "host_id": "00000000-0000-4000-8000-000000000001",
+      "title": "QUIZBEE model",
+      "subject": "General",
+      "difficulty": "Medium",
+      "question_count": 5,
+      "time_per_question": 20,
+      "mode": "solo",
+      "id": "c7b026c3-a469-482d-b279-25a3520ce1ad",
+      "created_at": "2026-10-26T09:22:24.346Z"
+    }
+  ],
+  "questions": [
+    {
+      "id": "00000000-0000-4000-8000-000000000011",
+      "quiz_id": "00000000-0000-4000-8000-000000000002",
+      "question_text": "What protocol does Socket.IO primarily establish over HTTP for persistent bidirectional communication?",
+      "option_a": "WebSocket",
+      "option_b": "FTP",
+      "option_c": "SSH",
+      "option_d": "GraphQL",
+      "correct_answer": "A",
+      "explanation": "Socket.IO upgrades HTTP connections to real-time WebSockets.",
+      "order_index": 0
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000012",
+      "quiz_id": "00000000-0000-4000-8000-000000000002",
+      "question_text": "In React, which hook is most appropriate for establishing a WebSocket connection on component mount?",
+      "option_a": "useState",
+      "option_b": "useEffect",
+      "option_c": "useReducer",
+      "option_d": "useContext",
+      "correct_answer": "B",
+      "explanation": "useEffect with an empty dependency array executes once on mount for lifecycle connections.",
+      "order_index": 1
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000013",
+      "quiz_id": "00000000-0000-4000-8000-000000000002",
+      "question_text": "What is the primary role of an authoritative backend in a competitive multiplayer quiz?",
+      "option_a": "Render React components on the server",
+      "option_b": "Prevent client cheating by validating answers and calculating scores server-side",
+      "option_c": "Minify frontend CSS stylesheets",
+      "option_d": "Store images in local storage",
+      "correct_answer": "B",
+      "explanation": "Authoritative backends never trust clients with scoring calculations or premature answer keys.",
+      "order_index": 2
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000014",
+      "quiz_id": "00000000-0000-4000-8000-000000000002",
+      "question_text": "What data structure offers O(1) average time complexity for key lookups in Node.js?",
+      "option_a": "Linked List",
+      "option_b": "Binary Search Tree",
+      "option_c": "Hash Map (Map / Object)",
+      "option_d": "Array",
+      "correct_answer": "C",
+      "explanation": "Hash maps provide constant-time O(1) key retrieval.",
+      "order_index": 3
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000015",
+      "quiz_id": "00000000-0000-4000-8000-000000000002",
+      "question_text": "Which HTTP status code signifies that a resource was successfully created?",
+      "option_a": "200 OK",
+      "option_b": "201 Created",
+      "option_c": "204 No Content",
+      "option_d": "400 Bad Request",
+      "correct_answer": "B",
+      "explanation": "HTTP 201 indicates a new resource has been created.",
+      "order_index": 4
+    },
+    {
+      "id": "4b41787a-38c2-444e-9789-ff621aa7cccb",
+      "question_text": "According to the study material on Cellular Respiration and Photosynthesis: Which statement accurately reflects \"Photosynthesis occurs in the chloroplasts of plant cells...\"?",
+      "option_a": "Photosynthesis occurs in the chloroplasts of plant cells",
+      "option_b": "It is contradicted by subsequent findings in modern Cellular Respiration and Photosynthesis practice",
+      "option_c": "It only applies under rare auxiliary conditions",
+      "option_d": "It has been completely superseded by newer standards",
+      "correct_answer": "A",
+      "explanation": "Verified directly from the provided text material: \"Photosynthesis occurs in the chloroplasts of plant cells\".",
+      "order_index": 0,
+      "quiz_id": "6ceebc07-1a58-4849-ade5-5da5c4a4a751"
+    },
+    {
+      "id": "55ef49d7-8498-42ea-ad22-eee2aa0d945e",
+      "question_text": "According to the study material on Cellular Respiration and Photosynthesis: Which statement accurately reflects \"It converts light energy into chemical energy stored in glucose...\"?",
+      "option_a": "It is contradicted by subsequent findings in modern Cellular Respiration and Photosynthesis practice",
+      "option_b": "It converts light energy into chemical energy stored in glucose",
+      "option_c": "It only applies under rare auxiliary conditions",
+      "option_d": "It has been completely superseded by newer standards",
+      "correct_answer": "B",
+      "explanation": "Verified directly from the provided text material: \"It converts light energy into chemical energy stored in glucose\".",
+      "order_index": 1,
+      "quiz_id": "6ceebc07-1a58-4849-ade5-5da5c4a4a751"
+    },
+    {
+      "id": "dc6584fe-c5b1-4845-a7c6-c5178dbad91c",
+      "question_text": "According to the study material on Cellular Respiration and Photosynthesis: Which statement accurately reflects \"Cellular respiration occurs in mitochondria to produce ATP...\"?",
+      "option_a": "Cellular respiration occurs in mitochondria to produce ATP",
+      "option_b": "It is contradicted by subsequent findings in modern Cellular Respiration and Photosynthesis practice",
+      "option_c": "It only applies under rare auxiliary conditions",
+      "option_d": "It has been completely superseded by newer standards",
+      "correct_answer": "A",
+      "explanation": "Verified directly from the provided text material: \"Cellular respiration occurs in mitochondria to produce ATP\".",
+      "order_index": 2,
+      "quiz_id": "6ceebc07-1a58-4849-ade5-5da5c4a4a751"
+    },
+    {
+      "id": "959a8540-7f4d-40bd-bad5-0ff88f41c56f",
+      "question_text": "In the Calvin cycle, what molecule is fixed to initiate the synthesis of sugars?",
+      "option_a": "Carbon Dioxide (CO₂)",
+      "option_b": "Molecular Oxygen (O₂)",
+      "option_c": "Nitrogen Gas (N₂)",
+      "option_d": "Glucose",
+      "correct_answer": "A",
+      "explanation": "Rubisco catalyzes the fixation of CO₂ into 3-PGA in the stroma.",
+      "order_index": 3,
+      "quiz_id": "6ceebc07-1a58-4849-ade5-5da5c4a4a751"
+    },
+    {
+      "id": "934b0cd3-0328-4301-909d-059084b12c2d",
+      "question_text": "According to the study material on General: Which statement accurately reflects \"Science  is  the  study  of  the  natural  and  physical  world  ...\"?",
+      "option_a": "It is contradicted by subsequent findings in modern General practice",
+      "option_b": "It only applies under rare auxiliary conditions",
+      "option_c": "It has been completely superseded by newer standards",
+      "option_d": "Science  is  the  study  of  the  natural  and  physical  world  around  us  through  a  s...",
+      "correct_answer": "D",
+      "explanation": "Verified directly from the provided text material: \"Science  is  the  study  of  the  natural  and  physical  world  around  us  through  a  systematic\".",
+      "order_index": 0,
+      "quiz_id": "c7b026c3-a469-482d-b279-25a3520ce1ad"
+    },
+    {
+      "id": "639af710-1e3e-4bf9-b82f-03da2414bf74",
+      "question_text": "According to the study material on General: Which statement accurately reflects \"process   of   observing,   questioning,   forming   hypotheses, ...\"?",
+      "option_a": "It is contradicted by subsequent findings in modern General practice",
+      "option_b": "process   of   observing,   questioning,   forming   hypotheses,   testing   hypotheses   ...",
+      "option_c": "It only applies under rare auxiliary conditions",
+      "option_d": "It has been completely superseded by newer standards",
+      "correct_answer": "B",
+      "explanation": "Verified directly from the provided text material: \"process   of   observing,   questioning,   forming   hypotheses,   testing   hypotheses   through\".",
+      "order_index": 1,
+      "quiz_id": "c7b026c3-a469-482d-b279-25a3520ce1ad"
+    },
+    {
+      "id": "ad03d3fc-f8c7-4b55-a1fb-83d9e96570e7",
+      "question_text": "According to the study material on General: Which statement accurately reflects \"experiment,  analysing evidence,  and  continuously  revising  ou...\"?",
+      "option_a": "experiment,  analysing evidence,  and  continuously  revising  our  knowledge",
+      "option_b": "It is contradicted by subsequent findings in modern General practice",
+      "option_c": "It only applies under rare auxiliary conditions",
+      "option_d": "It has been completely superseded by newer standards",
+      "correct_answer": "A",
+      "explanation": "Verified directly from the provided text material: \"experiment,  analysing evidence,  and  continuously  revising  our  knowledge\".",
+      "order_index": 2,
+      "quiz_id": "c7b026c3-a469-482d-b279-25a3520ce1ad"
+    },
+    {
+      "id": "e5823b97-eaf0-4503-a7b7-e4282f4b4c97",
+      "question_text": "In the Calvin cycle, what molecule is fixed to initiate the synthesis of sugars?",
+      "option_a": "Molecular Oxygen (O₂)",
+      "option_b": "Nitrogen Gas (N₂)",
+      "option_c": "Carbon Dioxide (CO₂)",
+      "option_d": "Glucose",
+      "correct_answer": "C",
+      "explanation": "Rubisco catalyzes the fixation of CO₂ into 3-PGA in the stroma.",
+      "order_index": 3,
+      "quiz_id": "c7b026c3-a469-482d-b279-25a3520ce1ad"
+    },
+    {
+      "id": "fa52e205-e06c-4737-aada-2a201ee542d5",
+      "question_text": "Which process occurs in the cytoplasm and breaks down one glucose molecule into two pyruvates?",
+      "option_a": "Krebs Cycle",
+      "option_b": "Oxidative Phosphorylation",
+      "option_c": "Glycolysis",
+      "option_d": "Fermentation alone",
+      "correct_answer": "C",
+      "explanation": "Glycolysis is an anaerobic pathway that breaks down glucose into pyruvate with a net gain of 2 ATP.",
+      "order_index": 4,
+      "quiz_id": "c7b026c3-a469-482d-b279-25a3520ce1ad"
+    }
+  ]
+}

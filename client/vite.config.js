@@ -8,7 +8,22 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 60000
+      },
+      '/socket.io': {
+        target: 'http://localhost:5000',
+        ws: true
+      }
+    }
+  },
+  preview: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        timeout: 60000
       },
       '/socket.io': {
         target: 'http://localhost:5000',

@@ -46,12 +46,19 @@ export const getRoom = async (req, res) => {
     return res.json({
       success: true,
       room,
-      quiz: {
+      quiz: quiz ? {
         id: quiz.id,
         title: quiz.title,
         subject: quiz.subject,
         time_per_question: quiz.time_per_question,
         mode: quiz.mode,
+        total_questions: questions.length
+      } : {
+        id: room.quiz_id,
+        title: 'Quiz Challenge',
+        subject: 'General',
+        time_per_question: 20,
+        mode: 'solo',
         total_questions: questions.length
       },
       players,

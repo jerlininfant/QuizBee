@@ -1,10 +1,26 @@
 import { store } from '../data/store.js';
+import { SupabaseRepository } from '../db/supabaseRepository.js';
 
 export const listQuizzes = async (req, res) => {
   try {
     const hostId = req.user.id;
-    const quizzes = store.getQuizzesByHost(hostId);
-    
+    let quizzes = store.getQuizzesByHost(hostId);
+
+    // If none in local store and Supabase is configured, pull from Supabase
+    if (quizzes.length === 0 && SupabaseRepository.isConfigured()) {
+      try {
+        const supaQuizzes = await SupabaseRepository.getQuizzesByHost(hostId);
+        if (supaQuizzes && supaQuizzes.length > 0) {
+          supaQuizzes.forEach(sq => {
+            store.quizzes.set(sq.id, sq);
+          });
+          quizzes = store.getQuizzesByHost(hostId);
+        }
+      } catch (err) {
+        console.warn('[QuizController] Supabase listQuizzes notice:', err.message);
+      }
+    }
+
     // Attach question counts and active room info
     const enriched = quizzes.map(q => {
       const questions = store.getQuestionsByQuizId(q.id);
@@ -16,6 +32,7 @@ export const listQuizzes = async (req, res) => {
 
     return res.json({ success: true, quizzes: enriched });
   } catch (err) {
+    console.error('List quizzes error:', err);
     return res.status(500).json({ success: false, error: 'Failed to fetch quizzes.' });
   }
 };
@@ -23,7 +40,23 @@ export const listQuizzes = async (req, res) => {
 export const getQuiz = async (req, res) => {
   try {
     const { id } = req.params;
-    const quiz = store.getQuizById(id);
+    let quiz = store.getQuizById(id);
+
+    // Check Supabase if not in memory
+    if (!quiz && SupabaseRepository.isConfigured()) {
+      try {
+        const supaQuiz = await SupabaseRepository.getQuizById(id);
+        if (supaQuiz) {
+          quiz = store.createQuiz(supaQuiz);
+          if (Array.isArray(supaQuiz.questions)) {
+            store.saveQuestions(supaQuiz.id, supaQuiz.questions);
+          }
+        }
+      } catch (err) {
+        console.warn('[QuizController] Supabase getQuiz notice:', err.message);
+      }
+    }
+
     if (!quiz) {
       return res.status(404).json({ success: false, error: 'Quiz not found.' });
     }
@@ -37,6 +70,7 @@ export const getQuiz = async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('Get quiz error:', err);
     return res.status(500).json({ success: false, error: 'Failed to retrieve quiz details.' });
   }
 };
@@ -63,7 +97,7 @@ export const createQuiz = async (req, res) => {
       title: title.trim(),
       subject: (subject || 'General Knowledge').trim(),
       difficulty,
-      question_count: parseInt(question_count, 10) || 5,
+      question_count: parseInt(question_count, 10) || (questions.length || 5),
       time_per_question: parseInt(time_per_question, 10) || 20,
       mode: mode === 'team' ? 'team' : 'solo'
     });
@@ -82,7 +116,7 @@ export const createQuiz = async (req, res) => {
     });
   } catch (err) {
     console.error('Create quiz error:', err);
-    return res.status(500).json({ success: false, error: 'Failed to create quiz.' });
+    return res.status(500).json({ success: false, error: err.message || 'Failed to create quiz.' });
   }
 };
 

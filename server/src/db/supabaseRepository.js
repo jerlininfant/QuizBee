@@ -80,16 +80,20 @@ export class SupabaseRepository {
   static async createUser(userData) {
     const client = this.getClient();
     if (!client) return null;
+    const row = {
+      name: userData.name,
+      email: userData.email?.toLowerCase().trim(),
+      password_hash: userData.password || userData.password_hash,
+      role: userData.role || 'host'
+    };
+    if (userData.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userData.id)) {
+      row.id = userData.id;
+    }
     const { data, error } = await client
       .from('users')
-      .insert([{
-        name: userData.name,
-        email: userData.email,
-        password_hash: userData.password,
-        role: userData.role || 'host'
-      }])
+      .upsert([row], { onConflict: 'email' })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[Supabase] createUser error:', error.message);
@@ -126,19 +130,23 @@ export class SupabaseRepository {
   static async createQuiz(quizData) {
     const client = this.getClient();
     if (!client) return null;
+    const row = {
+      host_id: quizData.host_id,
+      title: quizData.title,
+      subject: quizData.subject,
+      difficulty: quizData.difficulty,
+      question_count: quizData.question_count,
+      time_per_question: quizData.time_per_question,
+      mode: quizData.mode
+    };
+    if (quizData.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(quizData.id)) {
+      row.id = quizData.id;
+    }
     const { data, error } = await client
       .from('quizzes')
-      .insert([{
-        host_id: quizData.host_id,
-        title: quizData.title,
-        subject: quizData.subject,
-        difficulty: quizData.difficulty,
-        question_count: quizData.question_count,
-        time_per_question: quizData.time_per_question,
-        mode: quizData.mode
-      }])
+      .upsert([row], { onConflict: 'id' })
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
